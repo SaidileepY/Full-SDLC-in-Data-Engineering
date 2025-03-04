@@ -1,0 +1,100 @@
+{
+    "name": "incremental_load_pipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "Get Last Load Timestamp",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "00:10:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlServerSource",
+                        "sqlReaderQuery": "SELECT MAX(lastLoadTime) AS lastLoadTime FROM WatermarkTable"
+                    },
+                    "dataset": {
+                        "referenceName": "watermark_dataset",
+                        "type": "DatasetReference"
+                    }
+                }
+            },
+            {
+                "name": "Incremental Data Copy",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Get Last Load Timestamp",
+                        "dependencyConditions": ["Succeeded"]
+                    }
+                ],
+                "policy": {
+                    "timeout": "00:30:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlServerSource",
+                        "sqlReaderQuery": "SELECT * FROM source_table WHERE lastModifiedDate > '@{activity('Get Last Load Timestamp').output.firstRow.lastLoadTime}'"
+                    },
+                    "sink": {
+                        "type": "AzureBlobFSLinkedService",
+                        "dataset": {
+                            "referenceName": "adls_sink_dataset",
+                            "type": "DatasetReference"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "Update Watermark",
+                "type": "StoredProcedure",
+                "dependsOn": [
+                    {
+                        "activity": "Incremental Data Copy",
+                        "dependencyConditions": ["Succeeded"]
+                    }
+                ],
+                "policy": {
+                    "timeout": "00:10:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "storedProcedureName": "usp_UpdateWatermark",
+                    "parameters": {
+                        "newWatermarkValue": {
+                            "value": "@utcnow()",
+                            "type": "String"
+                        }
+                    },
+                    "dataset": {
+                        "referenceName": "watermark_dataset",
+                        "type": "DatasetReference"
+                    }
+                }
+            }
+        ],
+        "annotations": [],
+        "parameters": {
+            "SourceTable": {
+                "type": "String",
+                "defaultValue": "source_table"
+            },
+            "DestinationPath": {
+                "type": "String",
+                "defaultValue": "adls/path/to/destination"
+            }
+        }
+    }
+}
