@@ -3,8 +3,8 @@ In this Data Engineering project I have Designed a End to End pipeline and a ful
 
 ![data architecture](https://github.com/user-attachments/assets/87823498-9957-4c49-925e-3c45498abb65)
 
-You can connect with me on https://www.linkedin.com/in/sai-yamani-387325149/ 
-
+You can connect with me on [LinkedIn](https://www.linkedin.com/in/sai-yamani-387325149/ 
+)
 In this SDLC for Data Engineering, I have data from multiple sources like CRM, APIs, SQL DB etc.,
 As the project is about data from a Insurance company which is entered into CRM which gets automatically saved into SQL Server which is a onprem DB.
 I have used Azure Data Factory for Orchestration where I used a basic Copy Activity to get the data from Source to ADLS Gen2 which I have used as my storage account.
